@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Prompt Input</title>
+    <script>
+      function submitPrompt() {
+        const prompt = document.getElementById("prompt").value;
+        fetch("/api/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: "prompt=" + encodeURIComponent(prompt),
+        })
+          .then((response) => response.text())
+          .then((data) => {
+            console.log("Response:", data);
+            document.getElementById("response").innerText = data;
+          })
+          .catch((error) => console.error("Error:", error));
+      }
+    </script>
+  </head>
+  <body>
+    <h1>Enter Prompt</h1>
+    <input type="text" id="prompt" name="prompt" />
+    <button type="button" onclick="submitPrompt()">Submit</button>
+    <h2>Response:</h2>
+    <div id="response"></div>
+  </body>
+</html>
