@@ -1,8 +1,9 @@
 package com.amazon.aws;
 
 import java.nio.charset.Charset;
-import org.json.JSONObject;
+
 import com.amazon.aws.util.BedrockRequestBody;
+import com.amazon.aws.util.ResponseParser;
 import io.github.cdimascio.dotenv.Dotenv;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -47,19 +48,30 @@ public class ClaudeContentGeneration {
                 .withInferenceParameter("temperature", 0.5)
                 .withInferenceParameter("top_k", 250)
                 .withInferenceParameter("top_p", 1)
+                .withRole("user")
+                .withContentType("application/json")
+                .withAccept("application/json")
                 .build();
 
             InvokeModelRequest invokeModelRequest = InvokeModelRequest.builder()
                 .modelId(this.modelName)
                 .body(SdkBytes.fromString(bedrockBody, Charset.defaultCharset()))
+                .contentType("application/json")  // Ensure contentType is set
+                .accept("application/json")  // Ensure accept is set
                 .build();
             logger.info("Invoking Bedrock model with request: {}", invokeModelRequest);
             InvokeModelResponse invokeModelResponse = bedrockClient.invokeModel(invokeModelRequest);
             logger.info("Received response from Bedrock model: {}", invokeModelResponse);
-            JSONObject responseAsJson = new JSONObject(invokeModelResponse.body().asUtf8String());
-            logger.info("Response from Bedrock model: {}", responseAsJson.getString("completion"));
-            
-            return responseAsJson.getString("completion");
+
+            // Convert the InvokeModelResponse body to a string
+            String responseBody = invokeModelResponse.body().asString(Charset.defaultCharset());
+            logger.info("Response body as string: {}", responseBody);
+
+            // Extract text from the JSON response
+            String extractedText = ResponseParser.extractTextFromResponse(responseBody);
+            logger.info("Extracted text from response: {}", extractedText);
+
+            return extractedText;
         } catch (Exception e) {
             logger.error("Error invoking Bedrock model", e);
             throw new RuntimeException("Error invoking Bedrock model: " + e.getMessage(), e);

@@ -2,117 +2,172 @@ package com.amazon.aws.util;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 import org.json.JSONObject;
 
 import software.amazon.awssdk.annotations.NotNull;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class BedrockRequestBody {
 
-    private BedrockRequestBody() {
-    }
+  private BedrockRequestBody() {
+  }
 
-    public static BedrockRequestBodyBuilder builder() {
-        return new BedrockRequestBodyBuilder();
-    }
+  public static BedrockRequestBodyBuilder builder() {
+      return new BedrockRequestBodyBuilder();
+  }
 
-    public static class BedrockRequestBodyBuilder {
+  public static class BedrockRequestBodyBuilder {
 
-        @NotNull private String modelId;
-        @NotNull private String prompt;
-        private Map<String, Object> inferenceParameters;
+      @NotNull private String modelId;
+      @NotNull private String prompt;
+      private Map<String, Object> inferenceParameters = new HashMap<>();
+      private String system;
+      private String role;
+      private String contentType;
+      private String accept;
 
-        public BedrockRequestBodyBuilder withModelId(String modelId) {
-            this.modelId = modelId;
-            return this;
-        }
+      public BedrockRequestBodyBuilder withModelId(String modelId) {
+          this.modelId = modelId;
+          return this;
+      }
 
-        public BedrockRequestBodyBuilder withPrompt(String prompt) {
-            this.prompt = prompt;
-            return this;
-        }
+      public BedrockRequestBodyBuilder withPrompt(String prompt) {
+          this.prompt = prompt;
+          return this;
+      }
 
-        public BedrockRequestBodyBuilder withInferenceParameter(String paramName, Object paramValue) {
-            if (inferenceParameters == null) {
-                inferenceParameters = new HashMap<>();
-            }
-            inferenceParameters.put(paramName, paramValue);
-            return this;
-        }
+      public BedrockRequestBodyBuilder withInferenceParameter(String paramName, Object paramValue) {
+          if (inferenceParameters == null) {
+              inferenceParameters = new HashMap<>();
+          }
+          inferenceParameters.put(paramName, paramValue);
+          return this;
+      }
 
-        public String build() {
-            if (modelId == null) {
-                throw new IllegalArgumentException("'modelId' is a required parameter");
-            }
-            if (prompt == null) {
-                throw new IllegalArgumentException("'prompt' is a required parameter");
-            }
-            BedrockBodyCommand bedrockBodyCommand = null;
-            switch (modelId) {
-                case "amazon.titan-tg1-large":
-                case "amazon.titan-text-express-v1":
-                    bedrockBodyCommand = new AmazonTitanCommand(prompt, inferenceParameters);
-                    break;
-                case "ai21.j2-mid-v1":
-                case "ai21.j2-ultra-v1":
-                    bedrockBodyCommand = new AI21LabsCommand(prompt, inferenceParameters);
-                    break;
-                case "anthropic.claude-instant-v1":
-                case "anthropic.claude-v1":
-                case "anthropic.claude-v2":
-                    bedrockBodyCommand = new AnthropicCommand(prompt, inferenceParameters);
-                    break;
-                case "cohere.command-text-v14":
-                    bedrockBodyCommand = new CohereCommand(prompt, inferenceParameters);
-                    break;
-                case "stability.stable-diffusion-xl-v0":
-                    bedrockBodyCommand = new StabilityAICommand(prompt, inferenceParameters);
-                    break;
-            }
-            return bedrockBodyCommand.execute();
-        }
+      public BedrockRequestBodyBuilder withSystem(String system) {
+          this.system = system;
+          return this;
+      }
 
-    }
+      public BedrockRequestBodyBuilder withRole(String role) {
+          // Validate the role to ensure it matches the expected values
+          if (!"system".equals(role) && !"user".equals(role) && !"assistant".equals(role)) {
+              throw new IllegalArgumentException("'role' must be one of 'system', 'user', or 'assistant'");
+          }
+          this.role = role;
+          return this;
+      }
 
+      public BedrockRequestBodyBuilder withContentType(String contentType) {
+          this.contentType = contentType;
+          return this;
+      }
+
+      public BedrockRequestBodyBuilder withAccept(String accept) {
+          this.accept = accept;
+          return this;
+      }
+
+      public String build() {
+          if (modelId == null) {
+              throw new IllegalArgumentException("'modelId' is a required parameter");
+          }
+          if (prompt == null) {
+              throw new IllegalArgumentException("'prompt' is a required parameter");
+          }
+          if (role == null) {
+              throw new IllegalArgumentException("'role' is a required parameter");
+          }
+          if (contentType == null) {
+              throw new IllegalArgumentException("'contentType' is a required parameter");
+          }
+          if (accept == null) {
+              throw new IllegalArgumentException("'accept' is a required parameter");
+          }
+
+          BedrockBodyCommand bedrockBodyCommand = null;
+          switch (modelId) {
+              case "amazon.titan-tg1-large":
+              case "amazon.titan-text-express-v1":
+                  bedrockBodyCommand = new AmazonTitanCommand(prompt, inferenceParameters, system, role);
+                  break;
+              case "ai21.j2-mid-v1":
+              case "ai21.j2-ultra-v1":
+                  bedrockBodyCommand = new AI21LabsCommand(prompt, inferenceParameters, system, role);
+                  break;
+              case "anthropic.claude-instant-v1":
+              case "anthropic.claude-v1":
+              case "anthropic.claude-v2":
+              case "anthropic.claude-3-sonnet-20240229-v1:0":
+              case "anthropic.claude-3-haiku-20240307-v1:0":
+                  bedrockBodyCommand = new AnthropicCommand(prompt, inferenceParameters, system, role, contentType, accept);
+                  break;
+              case "cohere.command-text-v14":
+                  bedrockBodyCommand = new CohereCommand(prompt, inferenceParameters, system, role);
+                  break;
+              case "stability.stable-diffusion-xl-v0":
+                  bedrockBodyCommand = new StabilityAICommand(prompt, inferenceParameters, system, role);
+                  break;
+              default:
+                  throw new IllegalArgumentException("Unsupported modelId: " + modelId);
+          }
+          return bedrockBodyCommand.execute();
+      }
+  }
 }
 
 abstract class BedrockBodyCommand {
 
-    protected String prompt;
-    protected Map<String, Object> inferenceParameters;
+  protected String prompt;
+  protected Map<String, Object> inferenceParameters;
+  protected String system;
+  protected String role;
+  protected String contentType;
+  protected String accept;
 
-    public BedrockBodyCommand(String prompt, Map<String, Object> inferenceParameters) {
-        this.prompt = prompt;
-        this.inferenceParameters = inferenceParameters;
-    }
+  public BedrockBodyCommand(String prompt, Map<String, Object> inferenceParameters, String system, String role, String contentType, String accept) {
+      this.prompt = prompt;
+      this.inferenceParameters = inferenceParameters;
+      this.system = system;
+      this.role = role;
+      this.contentType = contentType;
+      this.accept = accept;
+  }
 
-    protected void updateMap(Map<String, Object> existingMap, Map<String, Object> newEntries) {
-        newEntries.forEach((newEntryKey, newEntryValue) -> {
-            updateMap(existingMap, newEntryKey, newEntryValue);
-        });
-    }
+  public BedrockBodyCommand(String prompt, Map<String, Object> inferenceParameters, String system, String role) {
+      this(prompt, inferenceParameters, system, role, "application/json", "application/json");
+  }
 
-    protected void updateMap(Map<String, Object> existingMap, String key, Object newValue) {
-        if (existingMap.containsKey(key)) {
-            existingMap.put(key, newValue);
-        } else {
-            existingMap.values().forEach(existingValue -> {
-                if (existingValue instanceof Map) {
-                    @SuppressWarnings("unchecked")
-                    var valueAsMap = (Map<String, Object>) existingValue;
-                    updateMap(valueAsMap, key, newValue);
-                }
-            });
-        }
-    }
+  protected void updateMap(Map<String, Object> existingMap, Map<String, Object> newEntries) {
+      newEntries.forEach((newEntryKey, newEntryValue) -> {
+          updateMap(existingMap, newEntryKey, newEntryValue);
+      });
+  }
 
-    public abstract String execute();
+  protected void updateMap(Map<String, Object> existingMap, String key, Object newValue) {
+      if (existingMap.containsKey(key)) {
+          existingMap.put(key, newValue);
+      } else {
+          existingMap.values().forEach(existingValue -> {
+              if (existingValue instanceof Map) {
+                  @SuppressWarnings("unchecked")
+                  var valueAsMap = (Map<String, Object>) existingValue;
+                  updateMap(valueAsMap, key, newValue);
+              }
+          });
+      }
+  }
 
+  public abstract String execute();
 }
 
 class AmazonTitanCommand extends BedrockBodyCommand {
 
-    public AmazonTitanCommand(String prompt, Map<String, Object> inferenceParameters) {
-        super(prompt, inferenceParameters);
+    public AmazonTitanCommand(String prompt, Map<String, Object> inferenceParameters, String system, String role) {
+        super(prompt, inferenceParameters, system, role);
     }
 
     @Override
@@ -140,8 +195,8 @@ class AmazonTitanCommand extends BedrockBodyCommand {
 
 class AI21LabsCommand extends BedrockBodyCommand {
 
-    public AI21LabsCommand(String prompt, Map<String, Object> inferenceParameters) {
-        super(prompt, inferenceParameters);
+    public AI21LabsCommand(String prompt, Map<String, Object> inferenceParameters, String system, String role) {
+        super(prompt, inferenceParameters, system, role);
     }
 
     @Override
@@ -171,38 +226,59 @@ class AI21LabsCommand extends BedrockBodyCommand {
 
 class AnthropicCommand extends BedrockBodyCommand {
 
-    public AnthropicCommand(String prompt, Map<String, Object> inferenceParameters) {
-        super(prompt, inferenceParameters);
-    }
+  private static final Logger logger = LoggerFactory.getLogger(BedrockBodyCommand.class);
 
-    @Override
-    public String execute() {
+  public AnthropicCommand(String prompt, Map<String, Object> inferenceParameters, String system, String role, String contentType, String accept) {
+      super(prompt, inferenceParameters, system, role, contentType, accept);
+  }
 
-        final String promptTemplate = "Human: \n Human: ##PROMPT## \n nAssistant:";
-        final String actualPrompt = promptTemplate.replace("##PROMPT##", this.prompt);
+  @Override
+  public String execute() {
+      if (this.prompt == null || this.role == null) {
+          throw new IllegalArgumentException("'prompt' and 'role' are required parameters");
+      }
 
-        Map<String, Object> jsonMap = new HashMap<>(7);
+      final Map<String, Object> jsonMap = new HashMap<>(4);
 
-        jsonMap.put("prompt", actualPrompt);
-        jsonMap.put("max_tokens_to_sample", 300);
-        jsonMap.put("temperature", 1);
-        jsonMap.put("top_k", 250);
-        jsonMap.put("top_p", 0.999);
-        jsonMap.put("stop_sequences", new String[] {});
-        jsonMap.put("anthropic_version", "bedrock-2023-05-31");
+      jsonMap.put("anthropic_version", "bedrock-2023-05-31");
+      jsonMap.put("max_tokens", 1000);
 
-        if (this.inferenceParameters != null && !this.inferenceParameters.isEmpty()) {
-            updateMap(jsonMap, inferenceParameters);
-        }
-        return new JSONObject(jsonMap).toString();
-    }
+      // Creating a content structure as required
+      // Map<String, Object> imageContent = Map.of(
+      //     "type", "image",
+      //     "source", Map.of(
+      //         "type", "base64",
+      //         "media_type", "image/jpeg",
+      //         "data", "iVBORw..."
+      //     )
+      // );
 
+      Map<String, Object> textContent = Map.of(
+          "type", "text",
+          "text", this.prompt
+      );
+
+      Map<String, Object> messageContent = Map.of(
+          "role", this.role,
+          "content", List.of(textContent)
+      );
+
+      jsonMap.put("messages", List.of(messageContent));
+
+      logger.info("Anthropic command: {}", new JSONObject(jsonMap).toString());
+
+      if (this.inferenceParameters != null && !this.inferenceParameters.isEmpty()) {
+          updateMap(jsonMap, inferenceParameters);
+      }
+
+      return new JSONObject(jsonMap).toString();
+  }
 }
 
 class CohereCommand extends BedrockBodyCommand {
 
-    public CohereCommand(String prompt, Map<String, Object> inferenceParameters) {
-        super(prompt, inferenceParameters);
+    public CohereCommand(String prompt, Map<String, Object> inferenceParameters, String system, String role) {
+        super(prompt, inferenceParameters, system, role);
     }
 
     @Override
@@ -228,8 +304,8 @@ class CohereCommand extends BedrockBodyCommand {
 
 class StabilityAICommand extends BedrockBodyCommand {
 
-    public StabilityAICommand(String prompt, Map<String, Object> inferenceParameters) {
-        super(prompt, inferenceParameters);
+    public StabilityAICommand(String prompt, Map<String, Object> inferenceParameters, String system, String role) {
+        super(prompt, inferenceParameters, system, role);
     }
 
     @Override
