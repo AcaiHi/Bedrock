@@ -1,31 +1,201 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>Prompt Input</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document Reader</title>
+    <style>
+      body {
+        font-size: 20px;
+        font-family: "標楷體", "Times New Roman", serif;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+      }
+      .button-group {
+        margin-bottom: 20px;
+      }
+      .button-group button {
+        margin: 5px;
+      }
+      .content {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        flex-grow: 1;
+      }
+      .file-display,
+      .response-display {
+        width: 45%;
+        border: 1px solid #ccc;
+        padding: 10px;
+        box-sizing: border-box;
+        overflow: auto;
+        max-height: calc(100vh - 200px); /* Adjust this value as needed */
+      }
+      pre {
+        white-space: pre-wrap; /* Ensures text wraps within the container */
+        word-wrap: break-word;
+      }
+      .loading {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 1.5em;
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+    </style>
     <script>
-      function submitPrompt() {
-        const prompt = document.getElementById("prompt").value;
+      let uploadData = null;
+      let id;
+
+      function setLoading(isLoading) {
+        const loadingIndicator = document.getElementById("loadingIndicator");
+        loadingIndicator.style.display = isLoading ? "block" : "none";
+        loadingIndicator.innerText = "請稍等10分鐘";
+      }
+
+      function uploadFiles() {
+        const wordFileInput = document.getElementById("wordFile");
+        const excelFileInput = document.getElementById("excelFile");
+
+        if (
+          wordFileInput.files.length === 0 ||
+          excelFileInput.files.length === 0
+        ) {
+          alert("Please upload both Word and Excel files.");
+          return;
+        }
+
+        const wordFile = wordFileInput.files[0];
+        const excelFile = excelFileInput.files[0];
+
+        const wordPatientId = extractPatientId(wordFile.name);
+        const excelPatientId = extractPatientId(excelFile.name);
+        id = wordPatientId;
+        console.log("🚀 ~ uploadFiles ~ id:", id);
+
+        if (wordPatientId !== excelPatientId) {
+          alert("The patient IDs in the file names do not match.");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("wordFile", wordFile);
+        formData.append("excelFile", excelFile);
+
+        setLoading(true);
+        fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => {
+            setLoading(false);
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.text(); // Use response.text() to get text response
+          })
+          .then((data) => {
+            console.log("Response:", data);
+            uploadData = data.trim(); // Trim the response data
+            document.getElementById("uploadResponse").innerText = uploadData;
+            displayUploadedFiles(wordFile, excelFile);
+          })
+          .catch((error) => {
+            setLoading(false);
+            console.error("Error:", error);
+            document.getElementById("uploadResponse").innerText =
+              "Upload failed.";
+          });
+      }
+
+      function generateSummary() {
+        if (!uploadData) {
+          alert("Please upload files before generating a summary.");
+          return;
+        }
+
+        setLoading(true);
         fetch("/api/generate", {
           method: "POST",
           headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
+            "Content-Type": "application/json",
           },
-          body: "prompt=" + encodeURIComponent(prompt),
+          body: JSON.stringify({ prompt: uploadData }), // Pass the uploaded data as a JSON string
         })
           .then((response) => response.text())
           .then((data) => {
+            setLoading(false);
             console.log("Response:", data);
-            document.getElementById("response").innerText = data;
+            document.getElementById(
+              "response"
+            ).innerText = `${id}：摘要\n${data.trim()}`; // Trim the summary response
           })
-          .catch((error) => console.error("Error:", error));
+          .catch((error) => {
+            setLoading(false);
+            console.error("Error:", error);
+          });
+      }
+
+      function displayUploadedFiles(wordFile, excelFile) {
+        document.getElementById("wordFileDisplay").innerText = wordFile
+          ? wordFile.name
+          : "No Word file uploaded.";
+        document.getElementById("excelFileDisplay").innerText = excelFile
+          ? excelFile.name
+          : "No Excel file uploaded.";
+      }
+
+      function extractPatientId(fileName) {
+        const regex = /(\d+)/;
+        const match = fileName.match(regex);
+        return match ? match[0] : "Unknown ID";
+      }
+
+      function extractPatientIdFromUploadData(uploadData) {
+        // Implement your logic here to extract the patient ID from the upload data
+        const regex = /(\d+)/;
+        const match = uploadData.match(regex);
+        return match ? match[0] : "Unknown ID";
       }
     </script>
   </head>
   <body>
-    <h1>Enter Prompt</h1>
-    <input type="text" id="prompt" name="prompt" />
-    <button type="button" onclick="submitPrompt()">Submit</button>
-    <h2>Response:</h2>
-    <div id="response"></div>
+    <div class="container">
+      <h1>Document Reader Interface</h1>
+      <div class="button-group">
+        <input type="file" id="wordFile" accept=".doc,.docx" />
+        <input type="file" id="excelFile" accept=".xls,.xlsx" />
+        <button type="button" onclick="uploadFiles()">Upload Files</button>
+        <button type="button" onclick="generateSummary()">
+          Generate Summary
+        </button>
+        <button type="button" onclick="generateSummary()">
+          Regenerate Summary
+        </button>
+      </div>
+      <div class="content">
+        <div class="file-display">
+          <h2>Uploaded Files:</h2>
+          <div id="wordFileDisplay">No Word file uploaded.</div>
+          <div id="excelFileDisplay">No Excel file uploaded.</div>
+          <pre id="uploadResponse"></pre>
+        </div>
+        <div class="response-display">
+          <h2>Response:</h2>
+          <pre id="response"></pre>
+        </div>
+      </div>
+      <div id="loadingIndicator" class="loading">請稍等10分鐘</div>
+    </div>
   </body>
 </html>

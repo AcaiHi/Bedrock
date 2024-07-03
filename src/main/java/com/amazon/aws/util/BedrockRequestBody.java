@@ -241,7 +241,7 @@ class AnthropicCommand extends BedrockBodyCommand {
       final Map<String, Object> jsonMap = new HashMap<>(4);
 
       jsonMap.put("anthropic_version", "bedrock-2023-05-31");
-      jsonMap.put("max_tokens", 1000);
+      jsonMap.put("max_tokens", 20000000);
 
       // Creating a content structure as required
       // Map<String, Object> imageContent = Map.of(

@@ -1,0 +1,5 @@
+--- 以上述部分病例 ---
+請幫我根據入日期產生病例的摘要，如有生命特徵的測試、病人個資、用藥與治療則另外標記
+**特別注意**：不要有自行產生的內容或與我對話只需要陳述病摘
+格式如下：
+XXXX-XX-XX：摘要, [生命象摘]：血壓 XXX/XXmmHg, 脈搏 XX次/分, 呼吸 XX次/分, 體溫 XX.X℃, SPO2: XX%, [病人個資]：XXXXXXXXXXXXXXXXX, [用藥與治療]：2024-05-10 12:04: 利尿劑 Spironolactone Tab 25mg 2 TAB PO BID、Rosis Inj 20mg/2ml(Furosemide) 40 MG IVA BID、自費Human Albumin 20% 50ml IVD QD

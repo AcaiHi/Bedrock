@@ -1,0 +1,21 @@
+--- 以上是此病患的病歷 ---
+請嚴格根據以下架構產生病歷摘要，不要有自行產生的內容或與我對話只需要陳述病摘
+住院經過:
+範例：病人因呼吸喘、咳嗽入到急診就診，抽血結果D-Dimer：，CREA：，eGFR：，Na，因腹痛及右背痛，依醫囑予Morphine Inj 10MG IVA STAT，疼痛有改善，GCS：E4V5M6，右手靜脈針留置，點滴暢無紅腫，轉住W53-12病房續治療。
+當前狀況與診斷（Diagnosis and Current Diagnosis）
+範例：
+患者是一位68歲的男性，因呼吸喘和咳嗽入院。入院後檢查顯示患有結腸癌合併肝轉移病史
+病人現況簡述 (Brief Description of the Patient's Condition)
+範例：患者的意識清晰，但因虛弱、不進食、不吃藥，家屬請求轉入安寧病房。患者的身體虛弱，四肢水腫、皮膚薄易壓紅。患者對護理的反應良好，遵從護理人員的指示。
+護理措施及護理提供 (Nursing Interventions and Care Provided)
+範例：定期翻身、腫脹肢體抬高、全關節活動、按摩促進體液回流，維持身體清潔
+用藥與治療（Medications and Treatments）
+範例：
+* 2024-05-10 12:04: 利尿劑 Spironolactone Tab 25mg 2 TAB PO BID、Rosis Inj 20mg/2ml(Furosemide) 40 MG IVA BID、自費Human Albumin 20% 50ml IVD QD
+* 2024-05-11 14:45: 利尿劑 Spironolactone Tab 25mg 2 TAB PO BID、Rosis Inj 20mg/2ml(Furosemide) 40 MG IVA BID
+與家屬溝通（Communication with Family）
+範例：隨時維持與家屬的溝通，針對患者的狀況和治療進展進行適當的溝通，回答家屬的問題和疑慮，並提供必要的支持和適當的資源。
+生命象摘要結果：
+  * XXXX-XX-XX: 血壓 XXX/XXmmHg, 脈搏 XX次/分, 體溫 XX.X℃, SPO2: XX%
+  * XXXX-XX-XX: 血壓 XXX/XXmmHg, 脈搏 XX次/分, 體溫 XX.X℃, SPO2: XX%
+  * XXXX-XX-XX: 血壓 XXX/XXmmHg, 脈搏 XX次/分, 體溫 XX.X℃, SPO2: XX%
